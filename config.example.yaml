@@ -1,0 +1,58 @@
+# Exemplo de configuração do pipeline Garimpo.
+# Copie para config.yaml e ajuste. API keys vêm de variáveis de ambiente.
+
+pipeline:
+  name: "garimpo_etl"
+  mode: "batch"            # batch, streaming
+  ai_enabled: true
+  parallel_workers: 4
+  chunk_size: 10000
+
+  custom_transformations:
+    - "filtrar registros com qualidade alta"
+    - "normalizar dados de contato"
+
+ai_models:
+  claude_api_key: null     # use ANTHROPIC_API_KEY
+  openai_api_key: null     # use OPENAI_API_KEY
+  max_tokens: 2048
+  temperature: 0.2
+
+business_rules:
+  required_fields:
+    - "nome"
+    - "email"
+  validation_rules:
+    cpf_validation: true
+    cnpj_validation: true
+  deduplication:
+    key_fields:
+      - "cpf"
+      - "cnpj"
+      - "email"
+
+data_sources:
+  leads_csv:
+    type: "file"
+    path: "./data/leads.csv"
+    format: "csv"
+    encoding: "utf-8"
+    separator: ";"
+  external_api:
+    type: "api"
+    url: "https://api.exemplo.com/leads"
+    headers:
+      Authorization: "Bearer TOKEN"
+    params:
+      limit: 1000
+
+output:
+  default_format: "csv"
+  csv:
+    encoding: "utf-8-sig"
+    separator: ";"
+  excel:
+    engine: "openpyxl"
+
+monitoring:
+  log_level: "INFO"
