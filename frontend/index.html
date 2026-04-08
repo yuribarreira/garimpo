@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Garimpo — Ferramenta gratuita de extração e transformação de dados. Processe CSV, Excel e JSON direto no navegador, sem instalar nada.">
+  <meta name="keywords" content="ETL, extração de dados, transformação, CSV, Excel, JSON, open source, gratuito, brasil">
+  <title>Garimpo — Extração e Transformação de Dados</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css">
+
+  <style>
+    :root {
+      --preto: #0a0e1a;
+      --fundo: #0f172a;
+      --superficie: #1e293b;
+      --borda: #334155;
+      --dourado: #f59e0b;
+      --dourado-claro: #fbbf24;
+      --verde: #10b981;
+      --azul: #3b82f6;
+      --texto: #e2e8f0;
+      --texto-fraco: #94a3b8;
+      --erro: #ef4444;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--fundo);
+      color: var(--texto);
+      min-height: 100vh;
+      font-size: 0.9rem;
+    }
+
+    header {
+      background: var(--preto);
+      border-bottom: 1px solid var(--borda);
+      padding: 0.8rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--dourado);
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .header-links a {
+      color: var(--texto-fraco);
+      text-decoration: none;
+      font-size: 0.8rem;
+      margin-left: 1rem;
+      transition: color 0.2s;
+    }
+
+    .header-links a:hover { color: var(--dourado); }
+
+    .tela { display: none; }
+    .tela.ativa { display: flex; flex-direction: column; }
+
+    #tela-upload {
+      min-height: calc(100vh - 52px);
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    .upload-centro {
+      width: 100%;
+      max-width: 680px;
+      text-align: center;
+    }
+
+    .upload-titulo {
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      line-height: 1.2;
+    }
+
+    .upload-titulo span { color: var(--dourado); }
+
+    .upload-sub {
+      color: var(--texto-fraco);
+      margin-bottom: 2rem;
+      font-size: 0.95rem;
+    }
+
+    .zona-drop {
+      border: 2px dashed var(--borda);
+      border-radius: 16px;
+      padding: 3rem 2rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: var(--superficie);
+      position: relative;
+    }
+
+    .zona-drop:hover, .zona-drop.arrastando {
+      border-color: var(--dourado);
+      background: rgba(245, 158, 11, 0.05);
+    }
+
+    .zona-drop input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .zona-drop .icone-upload {
+      font-size: 2.5rem;
+      color: var(--dourado);
+      margin-bottom: 1rem;
+      display: block;
+    }
+
+    .zona-drop h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; }
+    .zona-drop p { color: var(--texto-fraco); font-size: 0.85rem; }
+
+    .formatos {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+      margin-top: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .formato-badge {
+      background: var(--superficie);
+      border: 1px solid var(--borda);
+      color: var(--texto-fraco);
+      padding: 0.3rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .funcionalidades {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .func-item {
+      background: var(--superficie);
+      border: 1px solid var(--borda);
+      border-radius: 10px;
+      padding: 1rem;
+      text-align: left;
+    }
+
+    .func-item .func-icone { font-size: 1.2rem; margin-bottom: 0.4rem; display: block; }
+    .func-item strong { font-size: 0.85rem; display: block; margin-bottom: 0.2rem; }
+    .func-item span { font-size: 0.78rem; color: var(--texto-fraco); }
+
+    #tela-workspace {
+      height: calc(100vh - 52px);
+      flex-direction: row !important;
+      overflow: hidden;
+    }
+
+    .sidebar {
+      width: 290px;
+      flex-shrink: 0;
+      background: var(--preto);
+      border-right: 1px solid var(--borda);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar-secao {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--borda);
+    }
+
+    .sidebar-secao h6 {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--texto-fraco);
+      margin-bottom: 0.65rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .arquivo-info {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      background: var(--superficie);
+      border-radius: 8px;
+      padding: 0.65rem;
+    }
+
+    .arquivo-info .icone-tipo { font-size: 1.4rem; flex-shrink: 0; }
+    .arquivo-info .nome { font-weight: 600; font-size: 0.82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .arquivo-info .meta { font-size: 0.72rem; color: var(--texto-fraco); }
+
+    .coluna-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.28rem 0.2rem;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
+    .coluna-item:hover { background: rgba(255,255,255,0.04); }
+
+    .coluna-item input[type="checkbox"] {
+      accent-color: var(--dourado);
+      width: 13px;
+      height: 13px;
+      flex-shrink: 0;
+    }
+
+    .coluna-item label { font-size: 0.8rem; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+
+    .tipo-col {
+      font-size: 0.63rem;
+      background: var(--borda);
+      padding: 0.1rem 0.3rem;
+      border-radius: 3px;
+      color: var(--texto-fraco);
+      font-family: 'JetBrains Mono', monospace;
+      flex-shrink: 0;
+    }
+
+    .filtro-linha {
+      background: var(--superficie);
+      border: 1px solid var(--borda);
+      border-radius: 8px;
+      padding: 0.65rem;
+      margin-bottom: 0.4rem;
+      position: relative;
+    }
+
+    .filtro-remover {
+      position: absolute;
+      top: 0.35rem;
+      right: 0.35rem;
+      background: none;
+      border: none;
+      color: var(--texto-fraco);
+      cursor: pointer;
+      padding: 0.15rem;
+      line-height: 1;
+      font-size: 0.85rem;
+    }
+
+    .filtro-remover:hover { color: var(--erro); }
+
+    .btn-add-filtro {
+      background: none;
+      border: 1px dashed var(--borda);
+      color: var(--texto-fraco);
+      width: 100%;
+      padding: 0.45rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.78rem;
+      transition: all 0.2s;
+    }
+
+    .btn-add-filtro:hover { border-color: var(--dourado); color: var(--dourado); }
+
+    .ctrl-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.45rem;
+    }
+
+    .ctrl-toggle label { font-size: 0.8rem; color: var(--texto); cursor: pointer; }
+
+    .toggle { position: relative; width: 34px; height: 18px; }
+    .toggle input { display: none; }
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: var(--borda);
+      border-radius: 18px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      left: 3px;
+      top: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+
+    .toggle input:checked + .toggle-slider { background: var(--dourado); }
+    .toggle input:checked + .toggle-slider::before { transform: translateX(16px); }
+
+    .form-control-dark, .form-select-dark {
+      background: var(--superficie);
+      border: 1px solid var(--borda);
+      color: var(--texto);
+      border-radius: 5px;
+      padding: 0.3rem 0.55rem;
+      font-size: 0.78rem;
+      width: 100%;
+      margin-bottom: 0.3rem;
+    }
+
+    .form-control-dark:focus, .form-select-dark:focus {
+      outline: none;
+      border-color: var(--dourado);
+    }
+
+    .form-control-dark::placeholder { color: var(--borda); }
+    .form-select-dark option { background: var(--superficie); }
+
+    .workspace-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .workspace-toolbar {
+      background: var(--preto);
+      border-bottom: 1px solid var(--borda);
+      padding: 0.5rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .toolbar-info { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+
+    .stat-pill {
+      background: var(--superficie);
+      border: 1px solid var(--borda);
+      border-radius: 100px;
+      padding: 0.18rem 0.6rem;
+      font-size: 0.72rem;
+      color: var(--texto-fraco);
+    }
+
+    .stat-pill span { color: var(--dourado); font-weight: 600; }
+
+    .toolbar-acoes { display: flex; gap: 0.4rem; align-items: center; }
+
+    .btn-acao {
+      background: var(--superficie);
+      border: 1px solid var(--borda);
+      color: var(--texto);
+      padding: 0.3rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .btn-acao:hover { border-color: var(--texto-fraco); }
+
+    .btn-exportar {
+      background: var(--dourado);
+      border: none;
+      color: var(--preto);
+      padding: 0.35rem 0.9rem;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .btn-exportar:hover { background: var(--dourado-claro); }
+
+    .tabela-wrapper { flex: 1; overflow: auto; }
+
+    table.dados { border-collapse: collapse; min-width: 100%; font-size: 0.78rem; }
+
+    table.dados thead th {
+      background: var(--preto);
+      color: var(--texto-fraco);
+      font-weight: 600;
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.55rem 0.9rem;
+      position: sticky;
+      top: 0;
+      border-bottom: 1px solid var(--borda);
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    table.dados thead th:hover { color: var(--dourado); }
+    table.dados thead th.ordenado { color: var(--dourado); }
+
+    table.dados tbody tr { border-bottom: 1px solid rgba(255,255,255,0.03); }
+    table.dados tbody tr:hover { background: rgba(255,255,255,0.03); }
+
+    table.dados tbody td {
+      padding: 0.4rem 0.9rem;
+      color: var(--texto);
+      white-space: nowrap;
+      max-width: 220px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.76rem;
+    }
+
+    .celula-vazia { color: var(--borda); font-style: italic; font-family: 'Inter', sans-serif; }
+
+    .estado-vazio {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--texto-fraco);
+      gap: 0.5rem;
+      padding: 3rem;
+    }
+
+    .estado-vazio i { font-size: 2rem; }
+
+    .paginacao {
+      background: var(--preto);
+      border-top: 1px solid var(--borda);
+      padding: 0.45rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      font-size: 0.75rem;
+      color: var(--texto-fraco);
+    }
+
+    .paginacao-btns { display: flex; gap: 0.2rem; align-items: center; }
+
+    .pag-btn {
+      background: var(--superficie);
+      border: 1px solid var(--borda);
+      color: var(--texto-fraco);
+      padding: 0.18rem 0.55rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      transition: all 0.12s;
+    }
+
+    .pag-btn:hover, .pag-btn.ativo { border-color: var(--dourado); color: var(--dourado); }
+    .pag-btn:disabled { opacity: 0.3; cursor: default; pointer-events: none; }
+
+    .toast-container {
+      position: fixed;
+      top: 65px;
+      right: 1rem;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .toast-msg {
+      background: var(--verde);
+      color: white;
+      padding: 0.6rem 1.1rem;
+      border-radius: 7px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      animation: slideIn 0.2s ease;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    }
+
+    .toast-msg.erro { background: var(--erro); }
+
+    @keyframes slideIn {
+      from { transform: translateX(16px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    @media (max-width: 768px) {
+      #tela-workspace { flex-direction: column !important; height: auto; min-height: calc(100vh - 52px); }
+      .sidebar { width: 100%; height: auto; max-height: 45vh; }
+      .funcionalidades { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 480px) {
+      .funcionalidades { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <span>⛏</span>
+    <span>garimpo <span style="font-weight:300; color:var(--texto-fraco); font-size:0.9rem;">— extração de dados</span></span>
+  </div>
+  <div class="header-links">
+    <a href="https://github.com/yuribarreira/garimpo" target="_blank"><i class="bi bi-github"></i> GitHub</a>
+    <a href="#" onclick="voltarUpload(); return false;"><i class="bi bi-upload"></i> Novo arquivo</a>
+  </div>
+</header>
+
+<div class="toast-container" id="toasts"></div>
+
+<div id="tela-upload" class="tela ativa">
+  <div class="upload-centro">
+    <h1 class="upload-titulo">Garimpe seus <span>dados</span></h1>
+    <p class="upload-sub">Transforme CSV, Excel e JSON direto no navegador. Sem cadastro, sem servidor, sem custo.</p>
+
+    <div class="zona-drop" id="zona-drop" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event)">
+      <input type="file" id="input-arquivo" accept=".csv,.tsv,.xlsx,.xls,.json" onchange="carregarArquivo(event)">
+      <span class="icone-upload">⛏</span>
+      <h3>Arraste seu arquivo aqui</h3>
+      <p>ou clique para selecionar</p>
+    </div>
+
+    <div class="formatos">
+      <span class="formato-badge">.csv</span>
+      <span class="formato-badge">.tsv</span>
+      <span class="formato-badge">.xlsx</span>
+      <span class="formato-badge">.xls</span>
+      <span class="formato-badge">.json</span>
+    </div>
+
+    <div class="funcionalidades">
+      <div class="func-item">
+        <span class="func-icone">🔍</span>
+        <strong>Prévia imediata</strong>
+        <span>Visualize e explore seus dados antes de exportar</span>
+      </div>
+      <div class="func-item">
+        <span class="func-icone">⚙️</span>
+        <strong>Transformações</strong>
+        <span>Filtre, selecione colunas, remova duplicatas</span>
+      </div>
+      <div class="func-item">
+        <span class="func-icone">📤</span>
+        <strong>Exportar</strong>
+        <span>Baixe em CSV, JSON ou Excel com BOM UTF-8</span>
+      </div>
+    </div>
+
+    <p style="font-size:0.75rem; color:var(--borda); margin-top:1.5rem;">
+      <i class="bi bi-shield-lock"></i>
+      Seus dados não saem do seu navegador. Processamento 100% local.
+    </p>
+  </div>
+</div>
+
+<div id="tela-workspace" class="tela">
+  <div class="sidebar">
+    <div class="sidebar-secao">
+      <h6><i class="bi bi-file-earmark"></i> Arquivo</h6>
+      <div class="arquivo-info">
+        <span class="icone-tipo" id="sb-tipo-icone">📄</span>
+        <div style="overflow:hidden">
+          <div class="nome" id="sb-nome">—</div>
+          <div class="meta" id="sb-meta">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-secao" style="flex:1; overflow-y:auto; min-height:120px;">
+      <h6>
+        <i class="bi bi-table"></i> Colunas
+        <span style="margin-left:auto" id="sb-colunas-count"></span>
+      </h6>
+      <div style="display:flex; gap:0.25rem; margin-bottom:0.5rem;">
+        <button class="btn-add-filtro" style="width:auto; flex:1;" onclick="selecionarTodasColunas(true)">Todas</button>
+        <button class="btn-add-filtro" style="width:auto; flex:1;" onclick="selecionarTodasColunas(false)">Nenhuma</button>
+      </div>
+      <div id="lista-colunas"></div>
+    </div>
+
+    <div class="sidebar-secao">
+      <h6><i class="bi bi-funnel"></i> Filtros</h6>
+      <div id="lista-filtros"></div>
+      <button class="btn-add-filtro mt-1" onclick="adicionarFiltro()">
+        <i class="bi bi-plus"></i> Adicionar filtro
+      </button>
+    </div>
+
+    <div class="sidebar-secao">
+      <h6><i class="bi bi-gear"></i> Transformações</h6>
+      <div class="ctrl-toggle">
+        <label for="tog-duplicatas">Remover duplicatas</label>
+        <label class="toggle">
+          <input type="checkbox" id="tog-duplicatas" onchange="aplicarTransformacoes()">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="ctrl-toggle">
+        <label for="tog-vazios">Ignorar linhas vazias</label>
+        <label class="toggle">
+          <input type="checkbox" id="tog-vazios" checked onchange="aplicarTransformacoes()">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="ctrl-toggle">
+        <label for="tog-trim">Remover espaços extras</label>
+        <label class="toggle">
+          <input type="checkbox" id="tog-trim" checked onchange="aplicarTransformacoes()">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <div class="workspace-main">
+    <div class="workspace-toolbar">
+      <div class="toolbar-info">
+        <span class="stat-pill">Total: <span id="tb-total">0</span></span>
+        <span class="stat-pill">Filtrado: <span id="tb-filtrado">0</span></span>
+        <span class="stat-pill"><span id="tb-colunas">0</span> colunas</span>
+      </div>
+      <div class="toolbar-acoes">
+        <button class="btn-acao" onclick="exportar('csv')"><i class="bi bi-filetype-csv"></i> CSV</button>
+        <button class="btn-acao" onclick="exportar('json')"><i class="bi bi-filetype-json"></i> JSON</button>
+        <button class="btn-exportar" onclick="exportar('xlsx')"><i class="bi bi-file-earmark-excel"></i> Excel</button>
+      </div>
+    </div>
+
+    <div class="tabela-wrapper">
+      <table class="dados" id="tabela-dados">
+        <thead id="tabela-cabecalho"></thead>
+        <tbody id="tabela-corpo"></tbody>
+      </table>
+      <div class="estado-vazio" id="estado-vazio" style="display:none;">
+        <i class="bi bi-table"></i>
+        <span>Nenhum dado com os filtros atuais</span>
+      </div>
+    </div>
+
+    <div class="paginacao">
+      <span id="pag-info">—</span>
+      <div class="paginacao-btns">
+        <button class="pag-btn" id="pag-anterior" onclick="mudarPagina(-1)"><i class="bi bi-chevron-left"></i></button>
+        <div id="pag-numeros" style="display:flex; gap:0.2rem;"></div>
+        <button class="pag-btn" id="pag-proximo" onclick="mudarPagina(1)"><i class="bi bi-chevron-right"></i></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+<script>
+'use strict';
+
+const estado = {
+  dadosOriginais: [],
+  dadosProcessados: [],
+  colunas: [],
+  colunasAtivas: new Set(),
+  filtros: [],
+  pagina: 0,
+  linhasPorPagina: 50,
+  ordenacao: { coluna: null, asc: true },
+  nomeArquivo: '',
+  tipoArquivo: ''
+};
+
+function dragOver(e) { e.preventDefault(); document.getElementById('zona-drop').classList.add('arrastando'); }
+function dragLeave() { document.getElementById('zona-drop').classList.remove('arrastando'); }
+function drop(e) { e.preventDefault(); document.getElementById('zona-drop').classList.remove('arrastando'); if (e.dataTransfer.files[0]) processarArquivo(e.dataTransfer.files[0]); }
+function carregarArquivo(e) { if (e.target.files[0]) processarArquivo(e.target.files[0]); }
+
+function processarArquivo(arquivo) {
+  estado.nomeArquivo = arquivo.name;
+  const ext = arquivo.name.split('.').pop().toLowerCase();
+  estado.tipoArquivo = ext;
+
+  if (['csv', 'tsv'].includes(ext)) {
+    Papa.parse(arquivo, {
+      header: true, skipEmptyLines: true,
+      delimiter: ext === 'tsv' ? '\t' : '',
+      dynamicTyping: false,
+      complete: res => inicializarDados(res.data)
+    });
+  } else if (['xlsx', 'xls'].includes(ext)) {
+    const r = new FileReader();
+    r.onload = e => {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const dados = XLSX.utils.sheet_to_json(ws, { defval: '' });
+      inicializarDados(dados.map(row => Object.fromEntries(Object.entries(row).map(([k, v]) => [k, String(v)]))));
+    };
+    r.readAsArrayBuffer(arquivo);
+  } else if (ext === 'json') {
+    const r = new FileReader();
+    r.onload = e => {
+      try {
+        let p = JSON.parse(e.target.result);
+        if (!Array.isArray(p)) p = [p];
+        inicializarDados(p.map(item => aplanar(item)));
+      } catch { toast('JSON inválido.', true); }
+    };
+    r.readAsText(arquivo);
+  } else {
+    toast('Formato não suportado.', true);
+  }
+}
+
+function aplanar(obj, prefix) {
+  const res = {};
+  for (const [k, v] of Object.entries(obj)) {
+    const chave = prefix ? prefix + '.' + k : k;
+    if (v !== null && typeof v === 'object' && !Array.isArray(v)) Object.assign(res, aplanar(v, chave));
+    else res[chave] = v === null || v === undefined ? '' : String(v);
+  }
+  return res;
+}
+
+function inicializarDados(dados) {
+  if (!dados || dados.length === 0) { toast('Arquivo sem dados.', true); return; }
+  estado.dadosOriginais = dados;
+  estado.colunas = Object.keys(dados[0]);
+  estado.colunasAtivas = new Set(estado.colunas);
+  estado.filtros = [];
+  estado.pagina = 0;
+  estado.ordenacao = { coluna: null, asc: true };
+  atualizarSidebar();
+  aplicarTransformacoes();
+  mostrarWorkspace();
+}
+
+function atualizarSidebar() {
+  const a = estado;
+  const icones = { csv: '📊', tsv: '📊', xlsx: '📗', xls: '📗', json: '📋' };
+  document.getElementById('sb-tipo-icone').textContent = icones[a.tipoArquivo] || '📄';
+  document.getElementById('sb-nome').textContent = a.nomeArquivo;
+  document.getElementById('sb-meta').textContent = `${a.dadosOriginais.length.toLocaleString('pt-BR')} linhas · ${a.colunas.length} colunas`;
+  document.getElementById('sb-colunas-count').textContent = `${a.colunasAtivas.size}/${a.colunas.length}`;
+
+  document.getElementById('lista-colunas').innerHTML = a.colunas.map(col => {
+    const tipo = inferirTipo(a.dadosOriginais, col);
+    return `<div class="coluna-item">
+      <input type="checkbox" id="col-${esc(col)}" ${a.colunasAtivas.has(col) ? 'checked' : ''} onchange="toggleColuna('${esc(col)}')">
+      <label for="col-${esc(col)}">${col}</label>
+      <span class="tipo-col">${tipo}</span>
+    </div>`;
+  }).join('');
+}
+
+function inferirTipo(dados, col) {
+  const amostra = dados.slice(0, 20).map(r => r[col]).filter(v => v !== '' && v !== null);
+  if (!amostra.length) return 'vazio';
+  if (amostra.every(v => !isNaN(v) && String(v).trim() !== '')) return 'num';
+  if (amostra.filter(v => /\d{2}[\/-]\d{2}[\/-]\d{2,4}/.test(v)).length > amostra.length * 0.5) return 'data';
+  return 'txt';
+}
+
+function esc(s) {
+  return String(s).replace(/['"&<>]/g, c => ({ "'": '&#39;', '"': '&quot;', '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c] || c));
+}
+
+function toggleColuna(col) {
+  if (estado.colunasAtivas.has(col)) estado.colunasAtivas.delete(col);
+  else estado.colunasAtivas.add(col);
+  document.getElementById('sb-colunas-count').textContent = `${estado.colunasAtivas.size}/${estado.colunas.length}`;
+  aplicarTransformacoes();
+}
+
+function selecionarTodasColunas(todas) {
+  estado.colunas.forEach(col => {
+    const cb = document.getElementById('col-' + esc(col));
+    if (cb) cb.checked = todas;
+    if (todas) estado.colunasAtivas.add(col); else estado.colunasAtivas.delete(col);
+  });
+  document.getElementById('sb-colunas-count').textContent = `${estado.colunasAtivas.size}/${estado.colunas.length}`;
+  aplicarTransformacoes();
+}
+
+let filtroId = 0;
+
+function adicionarFiltro() {
+  estado.filtros.push({ id: ++filtroId, coluna: estado.colunas[0] || '', operador: 'contem', valor: '' });
+  renderFiltros();
+}
+
+function removerFiltro(id) {
+  estado.filtros = estado.filtros.filter(f => f.id !== id);
+  renderFiltros();
+  aplicarTransformacoes();
+}
+
+function renderFiltros() {
+  const ops = [
+    { v: 'contem', l: 'contém' }, { v: 'nao_contem', l: 'não contém' },
+    { v: 'igual', l: 'igual a' }, { v: 'diferente', l: 'diferente de' },
+    { v: 'vazio', l: 'está vazio' }, { v: 'nao_vazio', l: 'não está vazio' }
+  ];
+  document.getElementById('lista-filtros').innerHTML = estado.filtros.map(f => `
+    <div class="filtro-linha">
+      <button class="filtro-remover" onclick="removerFiltro(${f.id})"><i class="bi bi-x"></i></button>
+      <select class="form-select-dark" onchange="atualizarFiltro(${f.id},'coluna',this.value)">
+        ${estado.colunas.map(c => `<option value="${esc(c)}" ${f.coluna === c ? 'selected' : ''}>${c}</option>`).join('')}
+      </select>
+      <select class="form-select-dark" onchange="atualizarFiltro(${f.id},'operador',this.value)">
+        ${ops.map(o => `<option value="${o.v}" ${f.operador === o.v ? 'selected' : ''}>${o.l}</option>`).join('')}
+      </select>
+      ${!['vazio','nao_vazio'].includes(f.operador) ? `<input class="form-control-dark" placeholder="Valor..." value="${esc(f.valor)}" oninput="atualizarFiltro(${f.id},'valor',this.value)">` : ''}
+    </div>`).join('');
+}
+
+function atualizarFiltro(id, campo, valor) {
+  const f = estado.filtros.find(x => x.id === id);
+  if (f) { f[campo] = valor; if (campo === 'operador') renderFiltros(); aplicarTransformacoes(); }
+}
+
+function aplicarTransformacoes() {
+  let dados = [...estado.dadosOriginais];
+  const trim = document.getElementById('tog-trim')?.checked;
+  const vazios = document.getElementById('tog-vazios')?.checked;
+  const duplic = document.getElementById('tog-duplicatas')?.checked;
+
+  if (trim) dados = dados.map(row => Object.fromEntries(Object.entries(row).map(([k,v]) => [k, typeof v === 'string' ? v.trim() : v])));
+  if (vazios) dados = dados.filter(row => Object.values(row).some(v => v !== '' && v !== null && v !== undefined));
+
+  estado.filtros.forEach(f => {
+    if (!f.coluna) return;
+    dados = dados.filter(row => {
+      const val = String(row[f.coluna] ?? '').toLowerCase();
+      const alvo = f.valor.toLowerCase();
+      switch (f.operador) {
+        case 'contem': return val.includes(alvo);
+        case 'nao_contem': return !val.includes(alvo);
+        case 'igual': return val === alvo;
+        case 'diferente': return val !== alvo;
+        case 'vazio': return val === '';
+        case 'nao_vazio': return val !== '';
+      }
+      return true;
+    });
+  });
+
+  if (duplic) {
+    const vistos = new Set();
+    dados = dados.filter(row => {
+      const chave = JSON.stringify(Object.entries(row).filter(([k]) => estado.colunasAtivas.has(k)));
+      if (vistos.has(chave)) return false;
+      vistos.add(chave); return true;
+    });
+  }
+
+  if (estado.ordenacao.coluna) {
+    const { coluna, asc } = estado.ordenacao;
+    dados.sort((a, b) => {
+      const va = a[coluna] ?? '', vb = b[coluna] ?? '';
+      const na = parseFloat(va), nb = parseFloat(vb);
+      if (!isNaN(na) && !isNaN(nb)) return asc ? na - nb : nb - na;
+      return asc ? String(va).localeCompare(String(vb), 'pt-BR') : String(vb).localeCompare(String(va), 'pt-BR');
+    });
+  }
+
+  estado.dadosProcessados = dados;
+  estado.pagina = 0;
+  renderTabela();
+  atualizarStats();
+}
+
+function renderTabela() {
+  const colunas = estado.colunas.filter(c => estado.colunasAtivas.has(c));
+  const dados = estado.dadosProcessados;
+  const inicio = estado.pagina * estado.linhasPorPagina;
+  const fatia = dados.slice(inicio, inicio + estado.linhasPorPagina);
+  const thead = document.getElementById('tabela-cabecalho');
+  const tbody = document.getElementById('tabela-corpo');
+  const vazioEl = document.getElementById('estado-vazio');
+
+  if (dados.length === 0) { thead.innerHTML = ''; tbody.innerHTML = ''; vazioEl.style.display = 'flex'; return; }
+  vazioEl.style.display = 'none';
+
+  const { coluna: ord, asc } = estado.ordenacao;
+  thead.innerHTML = `<tr>${colunas.map(c => `<th class="${ord === c ? 'ordenado' : ''}" onclick="ordenarPor('${esc(c)}')">${c} <small style="opacity:.4">${ord === c ? (asc ? '↑' : '↓') : '↕'}</small></th>`).join('')}</tr>`;
+
+  tbody.innerHTML = fatia.map(row =>
+    `<tr>${colunas.map(c => {
+      const v = row[c];
+      const eh_vazio = v === '' || v === null || v === undefined;
+      return `<td title="${esc(String(v ?? ''))}">${eh_vazio ? '<span class="celula-vazia">—</span>' : esc(String(v))}</td>`;
+    }).join('')}</tr>`
+  ).join('');
+
+  renderPaginacao();
+}
+
+function ordenarPor(col) {
+  if (estado.ordenacao.coluna === col) estado.ordenacao.asc = !estado.ordenacao.asc;
+  else estado.ordenacao = { coluna: col, asc: true };
+  aplicarTransformacoes();
+}
+
+function renderPaginacao() {
+  const total = estado.dadosProcessados.length;
+  const paginas = Math.ceil(total / estado.linhasPorPagina);
+  const p = estado.pagina;
+  const inicio = p * estado.linhasPorPagina + 1;
+  const fim = Math.min((p + 1) * estado.linhasPorPagina, total);
+
+  document.getElementById('pag-info').textContent =
+    total > 0 ? `${inicio.toLocaleString('pt-BR')}–${fim.toLocaleString('pt-BR')} de ${total.toLocaleString('pt-BR')} linhas` : '0 linhas';
+
+  const container = document.getElementById('pag-numeros');
+  const btns = [];
+  const max = 5;
+  let inicio_p = Math.max(0, p - 2), fim_p = Math.min(paginas - 1, inicio_p + max - 1);
+  if (fim_p - inicio_p < max - 1) inicio_p = Math.max(0, fim_p - max + 1);
+  for (let i = inicio_p; i <= fim_p; i++) {
+    btns.push(`<button class="pag-btn ${i === p ? 'ativo' : ''}" onclick="irParaPagina(${i})">${i + 1}</button>`);
+  }
+  container.innerHTML = btns.join('');
+  document.getElementById('pag-anterior').disabled = p === 0;
+  document.getElementById('pag-proximo').disabled = p >= paginas - 1;
+}
+
+function mudarPagina(delta) {
+  const paginas = Math.ceil(estado.dadosProcessados.length / estado.linhasPorPagina);
+  estado.pagina = Math.max(0, Math.min(estado.pagina + delta, paginas - 1));
+  renderTabela();
+}
+
+function irParaPagina(p) { estado.pagina = p; renderTabela(); }
+
+function atualizarStats() {
+  document.getElementById('tb-total').textContent = estado.dadosOriginais.length.toLocaleString('pt-BR');
+  document.getElementById('tb-filtrado').textContent = estado.dadosProcessados.length.toLocaleString('pt-BR');
+  document.getElementById('tb-colunas').textContent = estado.colunasAtivas.size;
+}
+
+function exportar(formato) {
+  const colunas = estado.colunas.filter(c => estado.colunasAtivas.has(c));
+  const dados = estado.dadosProcessados.map(row => Object.fromEntries(colunas.map(c => [c, row[c]])));
+  if (!dados.length) { toast('Sem dados para exportar', true); return; }
+  const base = estado.nomeArquivo.replace(/\.[^.]+$/, '');
+
+  if (formato === 'csv') {
+    baixarTexto(Papa.unparse(dados), base + '-garimpo.csv', 'text/csv;charset=utf-8;');
+  } else if (formato === 'json') {
+    baixarTexto(JSON.stringify(dados, null, 2), base + '-garimpo.json', 'application/json');
+  } else if (formato === 'xlsx') {
+    const ws = XLSX.utils.json_to_sheet(dados);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Garimpo');
+    XLSX.writeFile(wb, base + '-garimpo.xlsx');
+  }
+  toast(`${dados.length.toLocaleString('pt-BR')} linhas exportadas (${formato.toUpperCase()})`);
+}
+
+function baixarTexto(conteudo, nome, tipo) {
+  const blob = new Blob(['\uFEFF' + conteudo], { type: tipo });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = nome; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function mostrarWorkspace() {
+  document.querySelectorAll('.tela').forEach(t => t.classList.remove('ativa'));
+  document.getElementById('tela-workspace').classList.add('ativa');
+  window.scrollTo(0, 0);
+}
+
+function voltarUpload() {
+  document.querySelectorAll('.tela').forEach(t => t.classList.remove('ativa'));
+  document.getElementById('tela-upload').classList.add('ativa');
+  document.getElementById('input-arquivo').value = '';
+}
+
+function toast(msg, erro = false) {
+  const el = document.createElement('div');
+  el.className = 'toast-msg' + (erro ? ' erro' : '');
+  el.textContent = msg;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+</script>
+</body>
+</html>
